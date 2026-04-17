@@ -1,0 +1,61 @@
+{
+  "catalog": "Merlin Engine Family (Falcon 9-inspired)",
+  "note": "Values are representative educational approximations based on publicly available data.",
+  "engines": [
+    {
+      "id": "merlin_1d_sl",
+      "name": "Merlin 1D (Sea Level)",
+      "variant": "stage1",
+      "thrust_sl": 845000,
+      "thrust_vac": 934000,
+      "isp_sl": 282,
+      "isp_vac": 311,
+      "mass": 470,
+      "throttle_range": [0.39, 1.0],
+      "description": "Primary first-stage engine. Nine engines per Falcon 9 first stage. Gimbal-capable for TVC.",
+      "propellant": "LOX/RP-1",
+      "chamber_pressure_bar": 97,
+      "nozzle_expansion_ratio": 16,
+      "educational_notes": {
+        "isp_discussion": "SL Isp of 282 s vs vacuum 311 s demonstrates nozzle expansion losses at sea level.",
+        "throttle_discussion": "Throttle-down to ~72% before Max-Q reduces aerodynamic loads."
+      }
+    },
+    {
+      "id": "merlin_1d_vac",
+      "name": "Merlin 1D Vacuum",
+      "variant": "stage2",
+      "thrust_sl": 0,
+      "thrust_vac": 981000,
+      "isp_sl": 100,
+      "isp_vac": 380,
+      "mass": 490,
+      "throttle_range": [0.39, 1.0],
+      "description": "Vacuum-optimised second-stage engine. Extended nozzle for maximum Isp in vacuum.",
+      "propellant": "LOX/RP-1",
+      "chamber_pressure_bar": 97,
+      "nozzle_expansion_ratio": 165,
+      "educational_notes": {
+        "isp_discussion": "Vacuum Isp of 380 s (Block 5 upgrade) achieved by expanding the nozzle from ratio 16 (SL) to 165 (vac).",
+        "design_trade": "Larger nozzle adds mass but the Isp gain far outweighs it for upper stages."
+      }
+    },
+    {
+      "id": "merlin_1d_reuse",
+      "name": "Merlin 1D (Reusable Config)",
+      "variant": "stage1",
+      "thrust_sl": 845000,
+      "thrust_vac": 934000,
+      "isp_sl": 282,
+      "isp_vac": 311,
+      "mass": 470,
+      "throttle_range": [0.39, 1.0],
+      "reusable_penalty_kg": 5500,
+      "description": "Merlin 1D configured for booster recovery (landing legs, grid fins, residual propellant reserve).",
+      "propellant": "LOX/RP-1",
+      "educational_notes": {
+        "reuse_discussion": "~5500 kg penalty (legs, grid fins, propellant reserve) reduces LEO payload by ~5500 kg vs expendable."
+      }
+    }
+  ]
+}

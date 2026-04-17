@@ -1,0 +1,58 @@
+{
+  "id": "template_falcon9_like",
+  "name": "Falcon 9-like Baseline",
+  "description": "Two-stage LOX/RP-1 vehicle inspired by SpaceX Falcon 9 Block 5. Two-burn Hohmann ascent: Burn 1 raises apogee to ~280 km, coast ~45 min, Burn 2 circularises. Matches observed ~256 km ISS-mission parking orbit (e.g. NG-24 at T+14:47).",
+  "reference": "Based on publicly available Falcon 9 performance data (SpaceX, 2023). Deployment altitude cross-checked against NG-24 Cygnus launch footage.",
+
+  "stage1": {
+    "dry_mass": 22200,
+    "prop_mass": 411000,
+    "engine_count": 9,
+    "diameter_m": 3.7,
+    "engine": {
+      "name": "Merlin 1D",
+      "thrust_sl": 845000,
+      "thrust_vac": 934000,
+      "isp_sl": 282,
+      "isp_vac": 311,
+      "mass": 470
+    }
+  },
+
+  "stage2": {
+    "dry_mass": 4000,
+    "prop_mass": 107500,
+    "engine_count": 1,
+    "diameter_m": 3.7,
+    "engine": {
+      "name": "Merlin 1D Vacuum",
+      "thrust_sl": 0.001,
+      "thrust_vac": 981000,
+      "isp_sl": 100,
+      "isp_vac": 380,
+      "mass": 490
+    }
+  },
+
+  "payload_mass": 20000,
+  "fairing_mass": 1900,
+
+  "propellant": {
+    "oxidiser": "LOX",
+    "fuel": "RP1",
+    "mixture_ratio": 2.56
+  },
+
+  "mission": {
+    "target_altitude_km": 280,
+    "reusable_booster": false,
+    "reusable_penalty_kg": 0,
+    "required_delta_v_m_s": null
+  },
+
+  "sim_config": {
+    "gravity_loss_estimate_m_s": 1200,
+    "max_q_throttle_fraction": 0.72,
+    "run_trajectory": true
+  }
+}

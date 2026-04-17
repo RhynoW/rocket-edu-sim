@@ -1,0 +1,78 @@
+{
+  "catalog": "Liquid Rocket Propellants",
+  "note": "Representative values for educational use. Actual performance varies with engine design.",
+  "propellants": [
+    {
+      "id": "lox_rp1",
+      "name": "LOX / RP-1",
+      "oxidiser": "LOX",
+      "fuel": "RP1",
+      "mixture_ratio": 2.56,
+      "oxidiser_density_kg_m3": 1141,
+      "fuel_density_kg_m3": 820,
+      "isp_vacuum_typical_s": 311,
+      "isp_sl_typical_s": 282,
+      "boiling_point_oxidiser_K": 90.2,
+      "storage": "cryogenic",
+      "description": "Workhorse combination used by Falcon 9, Atlas V, and Antares. High density, good Isp, cryogenic LOX.",
+      "educational_notes": {
+        "pros": "High density reduces tank volume; RP-1 is non-cryogenic (simplifies ground ops)",
+        "cons": "Carbon deposition in engines limits reuse without refurbishment; lower Isp than LH2"
+      }
+    },
+    {
+      "id": "lox_lh2",
+      "name": "LOX / LH2",
+      "oxidiser": "LOX",
+      "fuel": "LH2",
+      "mixture_ratio": 6.0,
+      "oxidiser_density_kg_m3": 1141,
+      "fuel_density_kg_m3": 71,
+      "isp_vacuum_typical_s": 450,
+      "isp_sl_typical_s": 381,
+      "boiling_point_oxidiser_K": 90.2,
+      "boiling_point_fuel_K": 20.3,
+      "storage": "cryogenic",
+      "description": "Highest Isp liquid combination. Used by Space Shuttle main engines, RS-68, RL-10.",
+      "educational_notes": {
+        "pros": "Highest vacuum Isp (~450 s) of practical propellants",
+        "cons": "LH2 has very low density (71 kg/m³) → huge tanks; both propellants cryogenic"
+      }
+    },
+    {
+      "id": "lox_ch4",
+      "name": "LOX / Methane",
+      "oxidiser": "LOX",
+      "fuel": "CH4",
+      "mixture_ratio": 3.6,
+      "oxidiser_density_kg_m3": 1141,
+      "fuel_density_kg_m3": 422,
+      "isp_vacuum_typical_s": 380,
+      "isp_sl_typical_s": 330,
+      "boiling_point_fuel_K": 111.7,
+      "storage": "cryogenic",
+      "description": "Next-generation propellant used by SpaceX Raptor (Starship) and Blue Origin BE-4 (New Glenn).",
+      "educational_notes": {
+        "pros": "Better Isp than RP-1; cleaner combustion improves reuse; potentially available on Mars",
+        "cons": "Cryogenic fuel; lower density than RP-1 increases tank volume"
+      }
+    },
+    {
+      "id": "n2o4_udmh",
+      "name": "N₂O₄ / UDMH",
+      "oxidiser": "N2O4",
+      "fuel": "UDMH",
+      "mixture_ratio": 2.0,
+      "oxidiser_density_kg_m3": 1450,
+      "fuel_density_kg_m3": 791,
+      "isp_vacuum_typical_s": 315,
+      "isp_sl_typical_s": 285,
+      "storage": "storable",
+      "description": "Hypergolic storable propellants. Used by Proton, Long March, and many upper stages.",
+      "educational_notes": {
+        "pros": "Storable at room temperature; hypergolic (ignite on contact, no igniter needed)",
+        "cons": "Highly toxic; lower Isp than cryogenic options; environmental concerns"
+      }
+    }
+  ]
+}
