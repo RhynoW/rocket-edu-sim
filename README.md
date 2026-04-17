@@ -1,7 +1,13 @@
 # Rocket Trade Study Simulator 火箭設計權衡研究模擬器
 
+> **For** undergraduate aerospace / mechanical engineering students and space enthusiasts who want to see how design choices — Isp, staging, TWR — translate into payload to orbit.  
+> **適合** 大學航太／機械系學生及太空愛好者，透過互動方式理解比衝、分節策略、推重比等設計選擇如何影響入軌酬載量。
+
 An interactive educational simulator for exploring two-stage rocket design trade-offs, inspired by the Falcon 9 Block 5.  
 互動式教育模擬器，以獵鷹 9 號 Block 5 為靈感，探索兩節式火箭設計的權衡取捨。
+
+> **Disclaimer 免責聲明:** This is a teaching tool, not a mission-design reference. Numbers are calibrated to be realistic but are approximate — focus on trends and sensitivities rather than absolute values.  
+> 本工具為教學用途，非任務設計參考。數值已校準至合理範圍，但屬近似值 — 請著重趨勢與敏感度分析，而非絕對數字。
 
 ---
 
@@ -30,6 +36,8 @@ An interactive educational simulator for exploring two-stage rocket design trade
   **ZEV 導引律** — 第二節燃燒使用零仰角速率向量俯仰程序
 - **Event-driven integration** — `scipy.solve_ivp` with per-phase terminal events (MECO, apogee, circularisation)  
   **事件驅動積分** — 使用 `scipy.solve_ivp`，各飛行段以端點事件觸發切換
+- **Model scope & limitations** — 2-D point-mass, no 6-DOF attitude / structural bending / propellant slosh; atmosphere is exponential; no winds or range-safety constraints  
+  **模型範圍與限制** — 二維質點模型，不含六自由度姿態、結構彎曲或推進劑晃動；大氣為指數模型，不含風場或飛行安全限制
 
 ---
 
@@ -85,6 +93,7 @@ The Falcon 9-like template is calibrated against publicly observed NG-24 Cygnus 
 |---------------|---------------|----------------|
 | Deployment altitude 部署高度 | ~256 km (T+14:47) | 260.4 km |
 | Circular orbital velocity 圓形軌道速度 | ~7,742 m/s | 7,752 m/s (+10 m/s) |
+| Total ΔV incl. losses 含損失總 ΔV | — | ~9,200–9,500 m/s (see Results tab) |
 
 ---
 
@@ -122,6 +131,15 @@ pip install streamlit plotly numpy scipy
 streamlit run trade_study_gui.py
 ```
 
+### First-run sanity check 首次執行驗證
+
+1. In the sidebar, select the **Falcon 9-like** template and click **Run Simulation**.  
+   在側邊欄選擇 **Falcon 9-like** 模板，點擊 **Run Simulation**。
+2. Open the **Results** tab — you should see final orbit altitude in the ~255–265 km range and orbital velocity ~7.75 km/s.  
+   開啟 **Results** 頁籤 — 最終軌道高度應在 ~255–265 km，軌道速度 ~7.75 km/s。
+3. If those numbers appear, your environment is correctly installed.  
+   若數值符合，表示環境安裝正確。
+
 ### API Server (optional) API 服務（選用）
 
 ```bash
@@ -129,6 +147,16 @@ pip install -r apps/api/requirements.txt
 uvicorn apps.api.app.main:app --reload
 # Docs at http://localhost:8000/docs
 ```
+
+---
+
+## Documentation 文件
+
+| Document 文件 | Description 說明 |
+|--------------|----------------|
+| [Instructor's Guide](docs/instructor_guide.md) | 2-hour lab plan with timeline, worksheets, and discussion questions / 2 小時實驗課程計畫，含時間表、工作表與討論題 |
+| Student Guide (in app) | Bilingual student + teacher edition — open the **Student Guide** tab in the simulator / 雙語學生版與教師版 — 在模擬器中開啟「學習指南」頁籤 |
+| Solver Reference (in app) | Phase Gantt chart and physics documentation — open the **Solver Reference** tab / 飛行段甘特圖與物理文件 — 在模擬器中開啟「解算器說明」頁籤 |
 
 ---
 
