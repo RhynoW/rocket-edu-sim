@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "rocket-core"
@@ -20,13 +20,6 @@ dev = [
     "pytest>=7.4",
     "pytest-cov>=4.1",
 ]
-
-[tool.setuptools.package-dir]
-"" = ".."
-
-[tool.setuptools.packages.find]
-where = [".."]
-include = ["rocket_core*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
