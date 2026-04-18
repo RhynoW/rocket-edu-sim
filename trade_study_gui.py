@@ -3673,9 +3673,9 @@ def tab_engine_library(baseline: dict) -> None:
                         f"Engine count: {n_engines}"
                     )
 
-                    # Detailed comparison table
-                    with st.expander("詳細對比表 Detail Comparison Table"):
-                        cmp_rows = [
+                    # Detailed comparison table (no expander — already inside one)
+                    st.markdown("**詳細對比表 Detail Comparison Table**")
+                    cmp_rows = [
                             {"指標 Metric": "引擎名稱 Engine",
                              "選定引擎 Selected": eng["name"] + " " + eng["variant"],
                              "基準引擎 Baseline": baseline_eng.get("name", "Baseline")},
@@ -3700,8 +3700,8 @@ def tab_engine_library(baseline: dict) -> None:
                             {"指標 Metric": "燃燒時間 (s)",
                              "選定引擎 Selected": f"{perf['burn_time_s']:.0f}",
                              "基準引擎 Baseline": f"{perf_base['burn_time_s']:.0f}"},
-                        ]
-                        st.dataframe(cmp_rows, use_container_width=True, hide_index=True)
+                    ]
+                    st.dataframe(cmp_rows, use_container_width=True, hide_index=True)
 
 
 # ---------------------------------------------------------------------------
