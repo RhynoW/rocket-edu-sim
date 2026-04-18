@@ -1178,7 +1178,7 @@ def tab_two_param(base_url: str, baseline: dict) -> None:
 def tab_guide() -> None:
     st.header("📚 學習指南與教師參考 Student Guide & Teacher Reference")
 
-    tab_s, tab_t = st.tabs(["🎓 學生版 Student Version", "👩‍🏫 教師版 Teacher Edition"])
+    tab_s, tab_t, tab_r = st.tabs(["🎓 學生版 Student Version", "👩‍🏫 教師版 Teacher Edition", "🔗 延伸資源 References"])
 
     # ── Student version ──────────────────────────────────────────────────────
     with tab_s:
@@ -1412,6 +1412,88 @@ Too low: gravity losses increase dramatically; below 1.0 = won't lift off.
 | LEO 酬載（非可回收）Payload exp. | 22,800 kg |
 | LEO 酬載（返場著陸）Payload RTLS | ~15,600 kg |
 | 起飛推重比 Liftoff TWR | ~1.40 |
+""")
+
+    # ── References version ────────────────────────────────────────────────────
+    with tab_r:
+        st.markdown("## 延伸學習資源 Further Learning Resources")
+        st.caption("精選外部工具與教材，可搭配本模擬器使用。/ Curated external tools and materials to use alongside this simulator.")
+
+        resources = [
+            {
+                "emoji": "🚀",
+                "name": "NASA Beginner's Guide to Rockets",
+                "url": "https://www.grc.nasa.gov/WWW/k-12/rocket/bgmr.html",
+                "zh": "NASA 將火箭設計與飛行背後的基礎數學與物理整理成可自學教材，並提供多種課堂活動，適合作為本模擬器的先備知識入口。",
+                "en": "NASA's self-study primer covering the mathematics and physics behind rocket design and flight, with classroom activities. Ideal prerequisite reading before using this simulator.",
+                "focus_zh": "推力、阻力、質量比、基礎火箭方程、課前閱讀",
+                "focus_en": "Thrust, drag, mass ratio, basic rocket equation, pre-lab reading",
+                "level": "⭐ 入門 Beginner",
+            },
+            {
+                "emoji": "🛠️",
+                "name": "NASA RocketModeler III",
+                "url": "https://www.grc.nasa.gov/WWW/k-12/VirtualAero/BottleRocket/airplane/rktsim.html",
+                "zh": "讓學生改變火箭設計變數觀察飛行結果，NASA 定位為探究式學習教材，適合與本模擬器做「簡化模型 → 進階權衡研究」的銜接。",
+                "en": "Interactive tool where students vary rocket design variables to observe flight outcomes. NASA positions it as inquiry-based learning — bridges simple models to the advanced trade studies here.",
+                "focus_zh": "設計變數直覺、模型簡化、課堂探究活動",
+                "focus_en": "Design variable intuition, model simplification, classroom inquiry",
+                "level": "⭐ 入門 Beginner",
+            },
+            {
+                "emoji": "🌍",
+                "name": "PhET: Gravity and Orbits",
+                "url": "https://phet.colorado.edu/en/simulations/gravity-and-orbits",
+                "zh": "PhET 可視化重力與軌道路徑，補足學生對圓軌道、橢圓軌道與速度變化的直觀理解，是霍曼轉移的絕佳前置概念課程。",
+                "en": "Visualises gravity and orbital paths, building intuition for circular/elliptical orbits and velocity changes — excellent conceptual preparation before studying the Hohmann transfer in this simulator.",
+                "focus_zh": "軌道力學直覺、霍曼轉移前置概念、速度-高度關係",
+                "focus_en": "Orbital mechanics intuition, Hohmann transfer prerequisite, velocity–altitude relationship",
+                "level": "⭐ 入門 Beginner",
+            },
+            {
+                "emoji": "🧪",
+                "name": "Science Learning Hub: Rocket Launch Challenge",
+                "url": "https://www.sciencelearn.org.nz/resources/2593-rocket-launch-challenge",
+                "zh": "互動模擬讓學生直接調整質量、推力、推力時間、阻力，觀察高度與載荷結果，並強調記錄參數與比較結果，與本模擬器的權衡研究學習方式高度契合。",
+                "en": "Students adjust mass, thrust, thrust duration, and drag to observe altitude and payload outcomes, with structured recording sheets — closely mirrors the trade-study methodology in this simulator.",
+                "focus_zh": "初學者參數掃描、學習單設計、探究式任務",
+                "focus_en": "Beginner parameter sweeps, structured worksheets, inquiry-based tasks",
+                "level": "⭐ 入門 Beginner",
+            },
+            {
+                "emoji": "⚙️",
+                "name": "OpenRocket",
+                "url": "https://openrocket.info/",
+                "zh": "完整的開源火箭設計與模擬工具，支援多級火箭、馬達資料庫、即時性能回饋與最佳化，適合作為進階學生的延伸設計平台。",
+                "en": "Full open-source rocket design and simulation tool with multi-stage support, motor database, real-time performance feedback, and optimisation — the natural next step for advanced students.",
+                "focus_zh": "進階設計、模型驗證、課後專題延伸",
+                "focus_en": "Advanced design, model validation, post-lab project extension",
+                "level": "⭐⭐⭐ 進階 Advanced",
+            },
+        ]
+
+        for r in resources:
+            with st.expander(f"{r['emoji']} {r['name']}  —  {r['level']}"):
+                col_a, col_b = st.columns([1, 1])
+                with col_a:
+                    st.markdown(f"**中文說明**\n\n{r['zh']}")
+                    st.markdown(f"**最適合補強 Best for:** {r['focus_zh']}")
+                with col_b:
+                    st.markdown(f"**English**\n\n{r['en']}")
+                    st.markdown(f"**Best reinforces:** {r['focus_en']}")
+                st.link_button(f"開啟 Open → {r['name']}", r['url'])
+
+        st.divider()
+        st.markdown("""
+### 建議使用順序 Suggested Learning Sequence
+
+| 階段 Stage | 工具 Tool | 目的 Purpose |
+|-----------|---------|------------|
+| 1 | NASA Beginner's Guide | 建立物理直覺 Build physics intuition |
+| 2 | PhET Gravity and Orbits | 理解軌道幾何 Understand orbital geometry |
+| 3 | NASA RocketModeler / Science Learning Hub | 簡單設計探究 Simple design exploration |
+| 4 | **本模擬器 This simulator** | **系統化權衡研究 Systematic trade study** |
+| 5 | OpenRocket | 進階多參數設計 Advanced multi-parameter design |
 """)
 
 
