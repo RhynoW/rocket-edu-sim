@@ -20,7 +20,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import plotly.graph_objects as go
-import requests
 import streamlit as st
 
 # ---------------------------------------------------------------------------
@@ -38,7 +37,6 @@ st.set_page_config(
 # Constants
 # ---------------------------------------------------------------------------
 
-DEFAULT_API = "http://127.0.0.1:8000"
 
 BASELINE_DEFAULT: Dict[str, Any] = {
     "stage1": {
@@ -390,46 +388,157 @@ def linspace(lo: float, hi: float, n: int) -> List[float]:
 
 
 # ---------------------------------------------------------------------------
-# API helpers
+# Direct simulation (no HTTP — calls rocket_core in-process)
 # ---------------------------------------------------------------------------
 
-def api_health(base_url: str) -> bool:
+def _vehicle_from_baseline(baseline: dict):
+    from rocket_core.vehicle.models import (
+        Engine, Stage, Mission, Propellant, SimulationConfig, Vehicle,
+    )
+    def _eng(d):
+        e = d["engine"]
+        return Engine(name=e["name"], thrust_sl=e["thrust_sl"], thrust_vac=e["thrust_vac"],
+                      isp_sl=e["isp_sl"], isp_vac=e["isp_vac"], mass=e["mass"])
+    def _stg(d):
+        return Stage(dry_mass=d["dry_mass"], prop_mass=d["prop_mass"],
+                     engine=_eng(d), engine_count=d["engine_count"], diameter_m=d["diameter_m"])
+    p = baseline.get("propellant", {})
+    m = baseline.get("mission", {})
+    c = baseline.get("sim_config", {})
+    return Vehicle(
+        stage1=_stg(baseline["stage1"]),
+        stage2=_stg(baseline["stage2"]),
+        payload_mass=baseline["payload_mass"],
+        fairing_mass=baseline.get("fairing_mass", 1900),
+        propellant=Propellant(fuel_name=str(p.get("fuel", "RP-1")),
+                              oxidizer_name=str(p.get("oxidiser", "LOX")),
+                              mixture_ratio=float(p.get("mixture_ratio", 2.56))),
+        mission=Mission(target_altitude_km=float(m.get("target_altitude_km", 400)),
+                        reusable_booster=bool(m.get("reusable_booster", False)),
+                        reusable_penalty_kg=float(m.get("reusable_penalty_kg", 0)),
+                        required_delta_v_m_s=m.get("required_delta_v_m_s")),
+        sim_config=SimulationConfig(
+            gravity_loss_estimate_m_s=float(c.get("gravity_loss_estimate_m_s", 1200)),
+            max_q_throttle_fraction=float(c.get("max_q_throttle_fraction", 0.72)),
+        ),
+    )
+
+
+def _stage_to_dict(s) -> dict:
+    return {k: getattr(s, k) for k in
+            ("stage_id", "m0_kg", "mf_kg", "mass_ratio", "isp_effective_s",
+             "ideal_delta_v_m_s", "burn_time_s", "prop_consumed_kg", "residual_propellant_kg")}
+
+
+def simulate_direct(baseline: dict) -> dict:
+    """Run full solver pipeline in-process; returns the same dict shape the tabs expect."""
     try:
-        r = requests.get(f"{base_url}/health", timeout=4)
-        return r.status_code == 200
-    except Exception:
-        return False
+        from rocket_core.mass_budget.solver  import solve_mass_budget
+        from rocket_core.staging.solver      import solve_staging
+        from rocket_core.payload.solver      import estimate_payload
+        from rocket_core.constraints.checker import check_constraints
+    except ImportError as exc:
+        return {"ok": False, "errors": [f"rocket_core import failed: {exc}"], "warnings": []}
 
-
-def api_simulate(base_url: str, vehicle: dict) -> Optional[dict]:
     try:
-        r = requests.post(f"{base_url}/api/simulate", json=vehicle, timeout=60)
-        r.raise_for_status()
-        return r.json()
-    except Exception as e:
-        st.error(f"API error / API 錯誤: {e}")
-        return None
+        vehicle = _vehicle_from_baseline(baseline)
+    except Exception as exc:
+        return {"ok": False, "errors": [f"Vehicle model error: {exc}"], "warnings": []}
 
-
-def api_sensitivity(base_url: str, base: dict, dot_path: str, values: List[float]) -> Optional[dict]:
-    payload = {"base": base, "parameter": dot_path, "values": values}
     try:
-        r = requests.post(f"{base_url}/api/sensitivity", json=payload, timeout=120)
-        r.raise_for_status()
-        return r.json()
-    except Exception as e:
-        st.error(f"API error / API 錯誤: {e}")
-        return None
+        report = check_constraints(vehicle)
+    except Exception as exc:
+        return {"ok": False, "errors": [f"Constraint check error: {exc}"], "warnings": []}
 
+    if report.error_messages:
+        return {
+            "ok": False, "errors": report.error_messages,
+            "warnings": report.warning_messages,
+            "constraints": [{"name": r.name, "severity": r.severity, "passed": r.passed,
+                             "message": r.message, "value": r.value, "limit": r.limit,
+                             "unit": r.unit} for r in report.results],
+        }
 
-def api_batch(base_url: str, runs: List[dict]) -> Optional[List[dict]]:
     try:
-        r = requests.post(f"{base_url}/api/simulate/batch", json={"runs": runs}, timeout=180)
-        r.raise_for_status()
-        return r.json().get("results", [])
-    except Exception as e:
-        st.error(f"API error / API 錯誤: {e}")
-        return None
+        mb  = solve_mass_budget(vehicle)
+        stg = solve_staging(vehicle)
+        pl  = estimate_payload(vehicle, stg)
+    except Exception as exc:
+        return {"ok": False, "errors": [f"Solver error: {exc}"], "warnings": []}
+
+    traj_out = None
+    if baseline.get("sim_config", {}).get("run_trajectory", False):
+        try:
+            from rocket_core.trajectory.solver import simulate_trajectory
+            tr = simulate_trajectory(vehicle)
+            traj_out = {
+                "orbit_achieved":     tr.orbit_achieved,
+                "final_altitude_km":  round(tr.burnout_altitude_m / 1_000.0, 1),
+                "final_velocity_m_s": round(tr.burnout_velocity_m_s, 1),
+                "max_q_Pa":           round(tr.max_q_Pa, 0),
+                "trajectory": [{"t_s": p.t_s, "altitude_km": round(p.altitude_m / 1e3, 2),
+                                 "downrange_km": round(p.downrange_m / 1e3, 1),
+                                 "velocity_m_s": p.velocity_m_s, "mass_kg": p.mass_kg,
+                                 "phase": p.phase}
+                                for p in tr.timeline],
+            }
+        except Exception:
+            pass  # trajectory failure is non-fatal
+
+    return {
+        "ok": True, "errors": [], "warnings": report.warning_messages,
+        "mass_budget": {k: getattr(mb, k) for k in
+                        ("liftoff_mass_kg", "total_dry_mass_kg", "total_prop_mass_kg",
+                         "payload_mass_kg", "fairing_mass_kg", "payload_fraction",
+                         "propellant_fraction", "structure_fraction", "liftoff_twr",
+                         "fairing_penalty_kg", "recovery_penalty_kg")},
+        "staging": {
+            "stage1": _stage_to_dict(stg.stage1),
+            "stage2": _stage_to_dict(stg.stage2),
+            **{k: getattr(stg, k) for k in
+               ("total_ideal_delta_v_m_s", "gravity_loss_m_s", "drag_loss_m_s",
+                "steering_loss_m_s", "total_losses_m_s", "usable_delta_v_m_s",
+                "required_delta_v_m_s", "delta_v_margin_m_s", "mission_feasible", "events")},
+        },
+        "payload": {k: getattr(pl, k) for k in
+                    ("mission_feasible", "orbit_achieved", "payload_mass_kg", "payload_fraction",
+                     "usable_delta_v_m_s", "required_delta_v_m_s", "margin_to_orbit_m_s",
+                     "achievable_orbit_km", "max_payload_kg", "limiting_factor", "sensitivity_hints")},
+        "trajectory": traj_out,
+        "constraints": [{"name": r.name, "severity": r.severity, "passed": r.passed,
+                         "message": r.message, "value": r.value, "limit": r.limit,
+                         "unit": r.unit} for r in report.results],
+    }
+
+
+def sensitivity_direct(base: dict, dot_path: str, values: List[float]) -> dict:
+    """Sweep one parameter; returns {"parameter": ..., "points": [...]}."""
+    import copy as _copy
+    points = []
+    for val in values:
+        cfg = _copy.deepcopy(base)
+        keys = dot_path.split(".")
+        node = cfg
+        for k in keys[:-1]:
+            node = node[k]
+        node[keys[-1]] = val
+        res = simulate_direct(cfg)
+        pl = res.get("payload") if res.get("ok") else None
+        stg = res.get("staging") if res.get("ok") else None
+        points.append({
+            "parameter_value":    val,
+            "payload_mass_kg":    pl["payload_mass_kg"]    if pl else 0.0,
+            "max_payload_kg":     pl["max_payload_kg"]     if pl else None,
+            "delta_v_margin_m_s": pl["margin_to_orbit_m_s"] if pl else -9999.0,
+            "mission_feasible":   pl["mission_feasible"]   if pl else False,
+            "limiting_factor":    pl["limiting_factor"]    if pl else "constraint_error",
+        })
+    return {"parameter": dot_path, "points": points}
+
+
+def batch_direct(runs: List[dict]) -> List[dict]:
+    """Run multiple independent simulations in-process."""
+    return [simulate_direct(r) for r in runs]
 
 
 # ---------------------------------------------------------------------------
@@ -724,22 +833,8 @@ def csv_comparison(sweep_param, compare_param, sweep_values,
 # Sidebar
 # ---------------------------------------------------------------------------
 
-def build_sidebar() -> Tuple[str, dict, bool]:
+def build_sidebar() -> Tuple[dict, bool]:
     st.sidebar.title("🚀 設定 Configuration")
-
-    base_url = st.sidebar.text_input("API URL", DEFAULT_API)
-
-    if st.sidebar.button("🔌 檢查連線 Check Connection"):
-        st.session_state["api_ok"] = api_health(base_url)
-
-    api_ok = st.session_state.get("api_ok")
-    if api_ok is True:
-        st.sidebar.success("✅ API 已連線 Connected")
-    elif api_ok is False:
-        st.sidebar.error("❌ 無法連線 — 請先啟動 uvicorn")
-    else:
-        st.sidebar.info("點擊上方按鈕確認連線 / Click above to verify.")
-
     st.sidebar.divider()
     st.sidebar.subheader("基準載具 Baseline Vehicle")
     st.sidebar.caption("以下數值為所有權衡研究的起始點。\nThese values define the starting point for all trade studies.")
@@ -793,19 +888,19 @@ def build_sidebar() -> Tuple[str, dict, bool]:
         "▶ 執行基準模擬 Run Baseline Simulation",
         type="primary", use_container_width=True)
 
-    return base_url, baseline, run_btn
+    return baseline, run_btn
 
 
 # ---------------------------------------------------------------------------
 # Tab 1: Dashboard
 # ---------------------------------------------------------------------------
 
-def tab_dashboard(base_url: str, baseline: dict, run_baseline: bool) -> None:
+def tab_dashboard(baseline: dict, run_baseline: bool) -> None:
     st.header("📊 儀表板 Dashboard")
 
     if run_baseline or "baseline_result" not in st.session_state:
         with st.spinner("執行基準模擬中… Running baseline simulation…"):
-            result = api_simulate(base_url, baseline)
+            result = simulate_direct(baseline)
         if result:
             st.session_state["baseline_result"] = result
             st.session_state["baseline_cfg"]    = copy.deepcopy(baseline)
@@ -892,7 +987,7 @@ def tab_dashboard(base_url: str, baseline: dict, run_baseline: bool) -> None:
 # Tab 2: Single-Parameter Sweep
 # ---------------------------------------------------------------------------
 
-def tab_single_sweep(base_url: str, baseline: dict) -> None:
+def tab_single_sweep(baseline: dict) -> None:
     st.header("📈 單參數掃描 Single-Parameter Sweep")
     st.caption(
         "選擇一個設計變數並設定掃描範圍，觀察酬載性能與任務可行性的變化。\n"
@@ -948,7 +1043,7 @@ def tab_single_sweep(base_url: str, baseline: dict) -> None:
 
     if st.button("▶ 執行掃描 Run Sweep", type="primary"):
         with st.spinner(f"執行 {steps} 次模擬… Running {steps} simulations…"):
-            resp = api_sensitivity(base_url, baseline, param["dot_path"], values)
+            resp = sensitivity_direct(baseline, param["dot_path"], values)
         if resp:
             st.session_state["sweep_result"]      = resp.get("points", [])
             st.session_state["sweep_param"]       = param
@@ -1010,7 +1105,7 @@ def tab_single_sweep(base_url: str, baseline: dict) -> None:
 # Tab 3: Two-Parameter Study
 # ---------------------------------------------------------------------------
 
-def tab_two_param(base_url: str, baseline: dict) -> None:
+def tab_two_param(baseline: dict) -> None:
     st.header("🗺️ 雙參數比較 Two-Parameter Comparison")
     st.caption(
         "掃描主要參數，同時固定次要參數於數個離散值，熱圖揭示兩個設計變數的交互關係。\n"
@@ -1112,7 +1207,7 @@ def tab_two_param(base_url: str, baseline: dict) -> None:
                 runs.append(veh)
 
         with st.spinner(f"執行 {total_runs} 次模擬… Running {total_runs} simulations…"):
-            batch = api_batch(base_url, runs)
+            batch = batch_direct(runs)
 
         if batch:
             grid: List[List[Optional[dict]]] = []
@@ -3613,7 +3708,7 @@ def tab_engine_library(baseline: dict) -> None:
 # Tab 5: Trajectory Globe
 # ---------------------------------------------------------------------------
 
-def tab_trajectory(base_url: str, baseline: dict) -> None:
+def tab_trajectory(baseline: dict) -> None:
     st.header("🌍 3D 軌跡模擬  3-D Trajectory Globe")
     st.caption(
         "設定發射場與軌道參數，在三維地球儀上觀看火箭從發射到入軌的完整飛行軌跡。\n"
@@ -3955,20 +4050,10 @@ was manually forced. Real GNC systems accept a small residual, corrected by a tr
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    base_url, baseline, run_baseline = build_sidebar()
+    baseline, run_baseline = build_sidebar()
 
     st.title("🚀 獵鷹 9 號式火箭教育模擬器 — 設計權衡研究工具")
     st.caption("Falcon 9-like Rocket Educational Simulator — Interactive Trade Study GUI | 互動式設計分析介面")
-
-    if "api_ok" not in st.session_state:
-        st.session_state["api_ok"] = api_health(base_url)
-
-    if not st.session_state.get("api_ok"):
-        st.error(
-            "**無法連線至 API / Cannot reach the API.**\n\n"
-            "請先啟動後端伺服器 / Start the backend server:\n"
-            "```\nuvicorn apps.api.app.main:app --reload\n```"
-        )
 
     # ── Apply engine-library overrides (set via Tab 6) ────────────────────
     for stage_key, ss_key in [("stage1", "eng_override_s1"),
@@ -4004,15 +4089,15 @@ def main() -> None:
     ])
 
     with tab1:
-        tab_dashboard(base_url, baseline, run_baseline)
+        tab_dashboard(baseline, run_baseline)
     with tab2:
-        tab_single_sweep(base_url, baseline)
+        tab_single_sweep(baseline)
     with tab3:
-        tab_two_param(base_url, baseline)
+        tab_two_param(baseline)
     with tab4:
         tab_guide()
     with tab5:
-        tab_trajectory(base_url, baseline)
+        tab_trajectory(baseline)
     with tab6:
         tab_engine_library(baseline)
     with tab7:

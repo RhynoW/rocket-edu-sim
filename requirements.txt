@@ -1,5 +1,6 @@
 # Streamlit Cloud — root requirements
 # Installs the local rocket_core package + all GUI dependencies.
+# No FastAPI or uvicorn required — the GUI calls rocket_core directly.
 
 ./packages/rocket_core
 

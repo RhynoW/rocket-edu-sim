@@ -46,7 +46,8 @@ An interactive educational simulator for exploring two-stage rocket design trade
 ```
 rocket-edu-sim/
 ├── trade_study_gui.py          # Streamlit application entry point / Streamlit 應用程式入口
-├── trade_study.py              # Headless batch trade study runner / 無介面批次執行器
+├── trade_study.py              # Interactive CLI trade-study runner / 互動式 CLI 工具
+├── requirements.txt            # Streamlit Cloud dependencies / 雲端部署相依套件
 │
 ├── packages/
 │   └── rocket_core/            # Physics solver library / 物理解算器核心庫
@@ -57,13 +58,6 @@ rocket-edu-sim/
 │       ├── payload/            # Maximum payload estimator / 最大酬載估算
 │       ├── constraints/        # TWR / burn-time / structure-fraction checker / 約束檢查
 │       └── trajectory/         # 2-D ODE trajectory solver (Hohmann) / 二維軌跡解算器（霍曼）
-│
-├── apps/
-│   └── api/                    # FastAPI REST service / FastAPI REST 服務
-│       └── app/
-│           ├── routers/        # /simulate endpoint / 模擬端點
-│           ├── schemas/        # Pydantic request/response models
-│           └── services/       # Orchestration layer / 服務編排層
 │
 ├── data/
 │   ├── engines/
@@ -76,6 +70,9 @@ rocket-edu-sim/
 │   │   └── world_boundaries.geojson  # Country boundaries for 3D globe / 3D 地球儀國界資料
 │   └── propellants/
 │       └── propellants.json
+│
+├── docs/
+│   └── instructor_guide.md     # 2-hour lab plan / 2 小時實驗課程計畫
 │
 └── tests/
     ├── unit/
@@ -140,12 +137,10 @@ streamlit run trade_study_gui.py
 3. If those numbers appear, your environment is correctly installed.  
    若數值符合，表示環境安裝正確。
 
-### API Server (optional) API 服務（選用）
+### CLI Trade Study (optional) CLI 模式（選用）
 
 ```bash
-pip install -r apps/api/requirements.txt
-uvicorn apps.api.app.main:app --reload
-# Docs at http://localhost:8000/docs
+python trade_study.py   # interactive menu / 互動式選單
 ```
 
 ---
@@ -168,7 +163,6 @@ uvicorn apps.api.app.main:app --reload
 | Visualisation 視覺化 | [Plotly](https://plotly.com/) (3D globe, animations, subplots) |
 | ODE solver ODE 解算器 | `scipy.integrate.solve_ivp` (RK45) |
 | Data models 資料模型 | [Pydantic v2](https://docs.pydantic.dev/) |
-| API | [FastAPI](https://fastapi.tiangolo.com/) + Uvicorn |
 | Packaging 套件管理 | [Hatch](https://hatch.pypa.io/) |
 
 ---
