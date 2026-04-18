@@ -1,0 +1,10 @@
+# Streamlit Cloud — root requirements
+# Installs the local rocket_core package + all GUI dependencies.
+
+./packages/rocket_core
+
+streamlit>=1.54.0
+plotly>=6.5.0
+numpy>=2.2.0
+scipy>=1.16.0
+pydantic>=2.11.0
