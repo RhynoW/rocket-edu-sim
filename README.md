@@ -1,7 +1,11 @@
 # Rocket Trade Study Simulator 火箭設計權衡研究模擬器
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://rocket-edu-sim.streamlit.app/)
+
 > **For** undergraduate aerospace / mechanical engineering students and space enthusiasts who want to see how design choices — Isp, staging, TWR — translate into payload to orbit.  
 > **適合** 大學航太／機械系學生及太空愛好者，透過互動方式理解比衝、分節策略、推重比等設計選擇如何影響入軌酬載量。
+
+**🚀 Live app: https://rocket-edu-sim.streamlit.app/**
 
 An interactive educational simulator for exploring two-stage rocket design trade-offs, inspired by the Falcon 9 Block 5.  
 互動式教育模擬器，以獵鷹 9 號 Block 5 為靈感，探索兩節式火箭設計的權衡取捨。
