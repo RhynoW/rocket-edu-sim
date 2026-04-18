@@ -15,8 +15,16 @@ import csv
 import io
 import json
 import os
+import sys
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
+
+# Ensure rocket_core is importable whether installed via pip or run directly
+# from the repo (e.g. on Streamlit Cloud where editable installs may not
+# always propagate correctly).
+_pkg_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "packages")
+if _pkg_dir not in sys.path:
+    sys.path.insert(0, _pkg_dir)
 
 import numpy as np
 import plotly.graph_objects as go

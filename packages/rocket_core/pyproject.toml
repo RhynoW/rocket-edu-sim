@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
 
 [project]
 name = "rocket-core"
@@ -21,9 +21,12 @@ dev = [
     "pytest-cov>=4.1",
 ]
 
-[tool.hatch.build.targets.wheel]
-sources = [".."]
-packages = ["rocket_core"]
+[tool.setuptools.package-dir]
+"" = ".."
+
+[tool.setuptools.packages.find]
+where = [".."]
+include = ["rocket_core*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
